@@ -36,7 +36,7 @@ class Game:
             print(f"{current_player.name} rolled: {dice_roll}")
             print(f"Current player: {current_player.name}")
             self.board.display()
-            self.board.buy_part(current_player)
+            self.board.buy_part(current_player, self.player_1, self.player_2, current_player, dice_roll)
 
 if __name__ == "__main__":
     game = Game()
