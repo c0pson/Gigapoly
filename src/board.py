@@ -117,14 +117,18 @@ class Board:
                 player.money += 400
             case GOOD_EFFECT.ADVANCE:
                 input("Move by 3 tiles")
+                os.system("cls")
                 self.move_player(player, 3)
+                print(f"P1 money: {player.money} | P2 money: {other_player.money}")
+                print()
+                print(f"Current player: {player.name}")
+                self.display()
                 self.buy_part(player, player, other_player, player, None)
             case GOOD_EFFECT.MOVE:
                 input("Roll the dice")
                 dice_roll = randrange(1, 7)
                 self.move_player(player, dice_roll)
                 os.system("cls")
-                player.move(dice_roll)
                 print(f"P1 money: {player.money} | P2 money: {other_player.money}")
                 print(f"{player.name} rolled: {dice_roll}")
                 print(f"Current player: {player.name}")
@@ -152,6 +156,7 @@ class Board:
                 if user_input == "yes":
                     player.current_position.owner = player
                     player.money -= player.current_position.tile.value
+                    player.add_owned_part(player.current_position.tile)
 
     def buy_part(self, player: 'Player', player_1, player_2, current_player, dice_roll) -> None:
         if player.current_position and player.current_position.owner:
@@ -180,6 +185,119 @@ class Board:
                 case _:
                     pass
 
+    @staticmethod
+    def draw_separator(row_idx: int) -> None:
+        if row_idx == 0:
+            print("┌────────" + "┬────────" * 4 + "┐")
+        elif row_idx == 1:
+            print("├────────" + "┼────────" + "┴────────" * 2 + "┼────────" + "┤")
+        elif row_idx == 4:
+            print("├────────" + "┼────────" + "┬────────" * 2 + "┼────────" + "┤")
+        elif row_idx == 5:
+            print("└────────" + "┴────────" * 4 + "┘")
+        elif row_idx == 3:
+            print("├────────┤ " + " " * 9 + "c0pson" + " " * 9 + " ├────────┤")
+        else:
+            print("├────────┤ " + " " * 8 + "GIGAPOLY" + " " * 8 + " ├────────┤")
+
+    @staticmethod
+    def get_position_number(row_idx: int, col_idx: int) -> int:
+            border_pos_map = {
+                (0, 0): 1,  (0, 1): 2,
+                (0, 2): 3,  (0, 3): 4,
+                (0, 4): 5,  (1, 4): 6,
+                (2, 4): 7,  (3, 4): 8,
+                (4, 4): 9,  (4, 3): 10,
+                (4, 2): 11, (4, 1): 12,
+                (4, 0): 13, (3, 0): 14,
+                (2, 0): 15, (1, 0): 16
+            }
+            return border_pos_map.get((row_idx, col_idx), 0)
+
+    @staticmethod
+    def get_owner_display(node) -> str:
+        if not node or not node.owner:
+            return "--"
+        return node.owner.name
+
+    @staticmethod
+    def get_players_display(node) -> str:
+        if not node or not node.current_players:
+            return ""
+        player_names = [f"{"\033[33m" if "1" in player.name else "\033[32m"}{player.name}\033[0m" for player in node.current_players]
+        return " ".join(player_names) + "  " * (int(2 / len(player_names))) + " " * (int(2 / len(player_names)))
+
+    def draw_cell_lines(self, row: list[TILE], row_idx: int, temp_nodes: list[list[Node]]) -> None:
+        for line in range(4):
+            if row_idx in {0, 4}:
+                out = ""
+                for col_idx, cell in enumerate(row):
+                    content = ""
+                    node = temp_nodes[row_idx][col_idx]
+                    pos_num = self.get_position_number(row_idx, col_idx)
+                    if line == 0:
+                        players_str = self.get_players_display(node)
+                        content = players_str.center(8)
+                    elif line == 1 and cell != 0:
+                        content = str(cell.name).center(8)
+                    elif line == 2:
+                        if node:
+                            owner_str = self.get_owner_display(node)
+                            content = owner_str.center(8)
+                        else:
+                            content = " " * 8
+                    elif line == 3:
+                        if pos_num > 0:
+                            content = f"{pos_num:<8}"
+                        else:
+                            content = " " * 8
+                    else:
+                        content = " " * 8
+                    out += "│" + content
+                out += "│"
+                print(out)
+            else:
+                left_cell = row[0]
+                right_cell = row[4]
+                left_node = temp_nodes[row_idx][0]
+                right_node = temp_nodes[row_idx][4]
+                left_content = ""
+                right_content = ""
+                left_pos = self.get_position_number(row_idx, 0)
+                right_pos = self.get_position_number(row_idx, 4)
+                if line == 0:
+                    left_players = self.get_players_display(left_node)
+                    right_players = self.get_players_display(right_node)
+                    left_content = left_players.center(8)
+                    right_content = right_players.center(8)
+                elif line == 1:
+                    if left_cell != 0:
+                        left_content = str(left_cell.name).center(8)
+                    else:
+                        left_content = " " * 8
+                    if right_cell != 0:
+                        right_content = str(right_cell.name).center(8)
+                    else:
+                        right_content = " " * 8
+                elif line == 2:
+                    left_owner = self.get_owner_display(left_node)
+                    right_owner = self.get_owner_display(right_node)
+                    left_content = left_owner.center(8)
+                    right_content = right_owner.center(8)
+                elif line == 3:
+                    if left_pos > 0:
+                        left_content = f"{left_pos:<8}"
+                    else:
+                        left_content = " " * 8
+                    if right_pos > 0:
+                        right_content = f"{right_pos:<8}"
+                    else:
+                        right_content = " " * 8
+                else:
+                    left_content = " " * 8
+                    right_content = " " * 8
+                print("│" + left_content + "│" + " " * 26 + "│" + right_content + "│")
+
     def display(self) -> None:
         temp_board: list[list[TILE]] = cast(list[list[TILE]], [[0 for _ in range(5)] for _ in range(5)])
         temp_nodes: list[list[Node]] = cast(list[list[Node]], [[None for _ in range(5)] for _ in range(5)])
@@ -195,116 +313,7 @@ class Board:
                 temp_board[row][col] = current.tile
                 temp_nodes[row][col] = current
                 current = current.next
-
-        def draw_separator(row_idx: int) -> None:
-            if row_idx == 0:
-                print("┌────────" + "┬────────" * 4 + "┐")
-            elif row_idx == 1:
-                print("├────────" + "┼────────" + "┴────────" * 2 + "┼────────" + "┤")
-            elif row_idx == 4:
-                print("├────────" + "┼────────" + "┬────────" * 2 + "┼────────" + "┤")
-            elif row_idx == 5:
-                print("└────────" + "┴────────" * 4 + "┘")
-            elif row_idx == 3:
-                print("├────────┤ " + " " * 9 + "c0pson" + " " * 9 + " ├────────┤")
-            else:
-                print("├────────┤ " + " " * 8 + "GIGAPOLY" + " " * 8 + " ├────────┤")
-
-        def get_players_display(node) -> str:
-            if not node or not node.current_players:
-                return ""
-            player_names = [f"{"\033[33m" if "1" in player.name else "\033[32m"}{player.name}\033[0m" for player in node.current_players]
-            return " ".join(player_names) + "  " * (int(2 / len(player_names))) + " " * (int(2 / len(player_names)))
-
-        def get_position_number(row_idx: int, col_idx: int) -> int:
-            border_pos_map = {
-                (0, 0): 1,  (0, 1): 2,
-                (0, 2): 3,  (0, 3): 4,
-                (0, 4): 5,  (1, 4): 6,
-                (2, 4): 7,  (3, 4): 8,
-                (4, 4): 9,  (4, 3): 10,
-                (4, 2): 11, (4, 1): 12,
-                (4, 0): 13, (3, 0): 14,
-                (2, 0): 15, (1, 0): 16
-            }
-            return border_pos_map.get((row_idx, col_idx), 0)
-
-        def get_owner_display(node) -> str:
-            if not node or not node.owner:
-                return "--"
-            return node.owner.name
-
-        def draw_cell_lines(row: list[TILE], row_idx: int) -> None:
-            for line in range(4):
-                if row_idx in {0, 4}:
-                    out = ""
-                    for col_idx, cell in enumerate(row):
-                        content = ""
-                        node = temp_nodes[row_idx][col_idx]
-                        pos_num = get_position_number(row_idx, col_idx)
-                        if line == 0:
-                            players_str = get_players_display(node)
-                            content = players_str.center(8)
-                        elif line == 1 and cell != 0:
-                            content = str(cell.name).center(8)
-                        elif line == 2:
-                            if node:
-                                owner_str = get_owner_display(node)
-                                content = owner_str.center(8)
-                            else:
-                                content = " " * 8
-                        elif line == 3:
-                            if pos_num > 0:
-                                content = f"{pos_num:<8}"
-                            else:
-                                content = " " * 8
-                        else:
-                            content = " " * 8
-                        out += "│" + content
-                    out += "│"
-                    print(out)
-                else:
-                    left_cell = row[0]
-                    right_cell = row[4]
-                    left_node = temp_nodes[row_idx][0]
-                    right_node = temp_nodes[row_idx][4]
-                    left_content = ""
-                    right_content = ""
-                    left_pos = get_position_number(row_idx, 0)
-                    right_pos = get_position_number(row_idx, 4)
-                    if line == 0:
-                        left_players = get_players_display(left_node)
-                        right_players = get_players_display(right_node)
-                        left_content = left_players.center(8)
-                        right_content = right_players.center(8)
-                    elif line == 1:
-                        if left_cell != 0:
-                            left_content = str(left_cell.name).center(8)
-                        else:
-                            left_content = " " * 8
-                        if right_cell != 0:
-                            right_content = str(right_cell.name).center(8)
-                        else:
-                            right_content = " " * 8
-                    elif line == 2:
-                        left_owner = get_owner_display(left_node)
-                        right_owner = get_owner_display(right_node)
-                        left_content = left_owner.center(8)
-                        right_content = right_owner.center(8)
-                    elif line == 3:
-                        if left_pos > 0:
-                            left_content = f"{left_pos:<8}"
-                        else:
-                            left_content = " " * 8
-                        if right_pos > 0:
-                            right_content = f"{right_pos:<8}"
-                        else:
-                            right_content = " " * 8
-                    else:
-                        left_content = " " * 8
-                        right_content = " " * 8
-                    print("│" + left_content + "│" + " " * 26 + "│" + right_content + "│")
         for i, row_ in enumerate(temp_board):
-            draw_separator(i)
-            draw_cell_lines(row_, i)
-        draw_separator(5)
+            self.draw_separator(i)
+            self.draw_cell_lines(row_, i, temp_nodes)
+        self.draw_separator(5)
