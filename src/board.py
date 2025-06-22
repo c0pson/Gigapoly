@@ -1,6 +1,7 @@
-from misc import SPECIAL_TILE, COMPONENT_TILE, TILE
-from random import shuffle
+from misc import SPECIAL_TILE, COMPONENT_TILE, TILE, GOOD_EFFECT, BAD_EFFECT, NEUTRAL_EFFECT
+from random import shuffle, randrange
 from typing import cast, TYPE_CHECKING
+from cards import RiskCards, ChanceCards
 import os
 
 if TYPE_CHECKING:
@@ -24,9 +25,9 @@ class CircularGraph:
             self.head = new_node
             self.head.next = new_node
             self.head.prev = new_node
-        else:
+        elif self.head.prev:
             tail = self.head.prev
-            tail.next = new_node                    # type: ignore
+            tail.next = new_node
             new_node.prev = tail
             new_node.next = self.head
             self.head.prev = new_node
@@ -34,6 +35,8 @@ class CircularGraph:
 class Board:
     def __init__(self) -> None:
         self.board: CircularGraph = self.create_board()
+        self.chance_cards = ChanceCards()
+        self.risk_cards = RiskCards()
 
     def create_board(self) -> CircularGraph:
         tiles: list[TILE] = cast(list[TILE], list(SPECIAL_TILE) + list(COMPONENT_TILE) * 2)
@@ -52,49 +55,115 @@ class Board:
             player.current_position.current_players.remove(player)
         new_position = player.current_position
         for _ in range(steps):
-            new_position = new_position.next        # type: ignore
+            if new_position.next:
+                new_position = new_position.next
+                if new_position == self.board.head:
+                    player.add_start_money()
         new_position.current_players.append(player)
         player.current_position = new_position
-    
+
     def move_player_to_position(self, player: 'Player', position_number: int) -> None:
         if position_number < 1 or position_number > 16:
             return
         if player.current_position and player in player.current_position.current_players:
             player.current_position.current_players.remove(player)
         current = self.board.head
-        for _ in range(position_number - 1):
-            current = current.next                  # type: ignore
-        current.current_players.append(player)      # type: ignore
+        if current and current.next:
+            for _ in range(position_number - 1):
+                current = current.next
+            current.current_players.append(player)
         player.current_position = current
 
-    def get_chance(self, player: 'Player') -> None:
-        pass
+    def get_chance(self, player: 'Player', other_player: 'Player') -> None:
+        effect = self.chance_cards.use_card()
+        match effect:
+            case GOOD_EFFECT.RAISE:
+                input("Claim 500$")
+                player.money += 500
+            case GOOD_EFFECT.BONUS:
+                input("Claim 400$")
+                player.money += 400
+            case GOOD_EFFECT.ADVANCE:
+                input("Move by 3 tiles")
+                self.move_player(player, 3)
+                os.system("cls")
+                print(f"P1 money: {player.money} | P2 money: {other_player.money}")
+                print()
+                print(f"Current player: {player.name}")
+                self.display()
+                self.buy_part(player, player, other_player, player, None)
+            case GOOD_EFFECT.MOVE:
+                input("Roll the dice")
+                dice_roll = randrange(1, 7)
+                self.move_player(player, dice_roll)
+                os.system("cls")
+                player.move(dice_roll)
+                print(f"P1 money: {player.money} | P2 money: {other_player.money}")
+                print(f"{player.name} rolled: {dice_roll}")
+                print(f"Current player: {player.name}")
+                self.display()
+                self.buy_part(player, player, other_player, player, dice_roll)
+            case _:
+                pass
 
-    def get_risk(self, player: 'Player') -> None:
-        pass
+    def get_risk(self, player: 'Player', other_player: 'Player') -> None:
+        effect = self.risk_cards.use_card()
+        match effect:
+            case GOOD_EFFECT.RAISE:
+                input("Claim 500$")
+                player.money += 500
+            case GOOD_EFFECT.BONUS:
+                input("Claim 400$")
+                player.money += 400
+            case GOOD_EFFECT.ADVANCE:
+                input("Move by 3 tiles")
+                self.move_player(player, 3)
+                self.buy_part(player, player, other_player, player, None)
+            case GOOD_EFFECT.MOVE:
+                input("Roll the dice")
+                dice_roll = randrange(1, 7)
+                self.move_player(player, dice_roll)
+                os.system("cls")
+                player.move(dice_roll)
+                print(f"P1 money: {player.money} | P2 money: {other_player.money}")
+                print(f"{player.name} rolled: {dice_roll}")
+                print(f"Current player: {player.name}")
+                self.display()
+                self.buy_part(player, player, other_player, player, dice_roll)
+            case BAD_EFFECT.LOOSE:
+                input("You are loosing 300$ ")
+                player.money -= 300
+            case NEUTRAL_EFFECT.NOTHING:
+                input("Nothing ever happens")
+            case _:
+                pass
 
-    def handle_buying(self, player: 'Player') -> None:
-        if player.current_position.owner:                               # type: ignore
-            return
-        if isinstance(player.current_position.tile, COMPONENT_TILE) and player.money >= player.current_position.tile.value:  # type: ignore
+    def handle_buying(self, player: 'Player', other_player: 'Player') -> None:
+        if player.current_position and player.current_position.owner:
+                if player.current_position.owner == player:
+                    return
+                elif isinstance(player.current_position.tile, COMPONENT_TILE):
+                    player.money -= player.current_position.tile.value
+                    other_player.money += player.current_position.tile.value
+        elif player.current_position and isinstance(player.current_position.tile, COMPONENT_TILE) and player.money >= player.current_position.tile.value:
             user_input = ""
             while user_input not in {"yes", "no"}:
                 user_input = input("Are you willing to buy this part [yes | no]: ")
                 if user_input == "yes":
-                    player.current_position.owner = player              # type: ignore
-                    player.money -= player.current_position.tile.value  # type: ignore
+                    player.current_position.owner = player
+                    player.money -= player.current_position.tile.value
 
     def buy_part(self, player: 'Player', player_1, player_2, current_player, dice_roll) -> None:
-        if player.current_position.owner:                               # type: ignore
-            return
-        self.handle_buying(player)
-        if isinstance(player.current_position.tile, SPECIAL_TILE):      # type: ignore
+        if player.current_position and player.current_position.owner:
+            self.handle_buying(player, player_1 if player_1 != current_player else player_2)
+        self.handle_buying(player, player_2)
+        if player.current_position and isinstance(player.current_position.tile, SPECIAL_TILE):
             user_input_: int = -1
-            match player.current_position.tile:                         # type: ignore
+            match player.current_position.tile:
                 case SPECIAL_TILE.CHANCE:
-                    self.get_chance(player)
+                    self.get_chance(player, player_1 if current_player != player_1 else player_2)
                 case SPECIAL_TILE.RISK:
-                    self.get_risk(player)
+                    self.get_risk(player, player_1 if current_player != player_1 else player_2)
                 case SPECIAL_TILE.TRAVEL:
                     while user_input_ < 1 or user_input_ > 16:
                         try:
@@ -104,17 +173,17 @@ class Board:
                     self.move_player_to_position(player, user_input_)
                     os.system("cls")
                     print(f"P1 money: {player_1.money} | P2 money: {player_2.money}")
-                    print(f"{current_player.name} rolled: {dice_roll}")
+                    print(f"{current_player.name} rolled: {dice_roll}") if dice_roll else print()
                     print(f"Current player: {current_player.name}")
                     self.display()
-                    self.handle_buying(player)
+                    self.buy_part(player, player_2, player_2, current_player, dice_roll)
                 case _:
                     pass
 
     def display(self) -> None:
-        temp_board = [[0 for _ in range(5)] for _ in range(5)]
-        temp_nodes = [[None for _ in range(5)] for _ in range(5)]
-        border_positions = [
+        temp_board: list[list[TILE]] = cast(list[list[TILE]], [[0 for _ in range(5)] for _ in range(5)])
+        temp_nodes: list[list[Node]] = cast(list[list[Node]], [[None for _ in range(5)] for _ in range(5)])
+        border_positions: list[tuple[int, int]] = [
             (0, 0), (0, 1), (0, 2), (0, 3),
             (0, 4), (1, 4), (2, 4), (3, 4),
             (4, 4), (4, 3), (4, 2), (4, 1),
@@ -122,9 +191,10 @@ class Board:
         ]
         current = self.board.head
         for row, col in border_positions:
-            temp_board[row][col] = current.tile     # type: ignore
-            temp_nodes[row][col] = current          # type: ignore
-            current = current.next                  # type: ignore
+            if current:
+                temp_board[row][col] = current.tile
+                temp_nodes[row][col] = current
+                current = current.next
 
         def draw_separator(row_idx: int) -> None:
             if row_idx == 0:
@@ -164,7 +234,7 @@ class Board:
                 return "--"
             return node.owner.name
 
-        def draw_cell_lines(row: list, row_idx: int) -> None:
+        def draw_cell_lines(row: list[TILE], row_idx: int) -> None:
             for line in range(4):
                 if row_idx in {0, 4}:
                     out = ""
@@ -234,7 +304,7 @@ class Board:
                         left_content = " " * 8
                         right_content = " " * 8
                     print("│" + left_content + "│" + " " * 26 + "│" + right_content + "│")
-        for i, row in enumerate(temp_board):    # type: ignore
+        for i, row_ in enumerate(temp_board):
             draw_separator(i)
-            draw_cell_lines(row, i)             # type: ignore
+            draw_cell_lines(row_, i)
         draw_separator(5)
