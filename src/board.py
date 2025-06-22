@@ -1,4 +1,12 @@
-from misc import SPECIAL_TILE, COMPONENT_TILE, TILE, GOOD_EFFECT, BAD_EFFECT, NEUTRAL_EFFECT
+from misc import (
+    SPECIAL_TILE,
+    COMPONENT_TILE,
+    TILE,
+    GOOD_EFFECT,
+    BAD_EFFECT,
+    NEUTRAL_EFFECT,
+    clear_screen
+)
 from random import shuffle, randrange
 from typing import cast, TYPE_CHECKING
 from cards import RiskCards, ChanceCards
@@ -86,7 +94,7 @@ class Board:
             case GOOD_EFFECT.ADVANCE:
                 input("Move by 3 tiles")
                 self.move_player(player, 3)
-                os.system("cls")
+                clear_screen()
                 print(f"P1 money: {player.money} | P2 money: {other_player.money}")
                 print()
                 print(f"Current player: {player.name}")
@@ -96,7 +104,7 @@ class Board:
                 input("Roll the dice")
                 dice_roll = randrange(1, 7)
                 self.move_player(player, dice_roll)
-                os.system("cls")
+                clear_screen()
                 player.move(dice_roll)
                 print(f"P1 money: {player.money} | P2 money: {other_player.money}")
                 print(f"{player.name} rolled: {dice_roll}")
@@ -117,7 +125,7 @@ class Board:
                 player.money += 400
             case GOOD_EFFECT.ADVANCE:
                 input("Move by 3 tiles")
-                os.system("cls")
+                clear_screen()
                 self.move_player(player, 3)
                 print(f"P1 money: {player.money} | P2 money: {other_player.money}")
                 print()
@@ -128,7 +136,7 @@ class Board:
                 input("Roll the dice")
                 dice_roll = randrange(1, 7)
                 self.move_player(player, dice_roll)
-                os.system("cls")
+                clear_screen()
                 print(f"P1 money: {player.money} | P2 money: {other_player.money}")
                 print(f"{player.name} rolled: {dice_roll}")
                 print(f"Current player: {player.name}")
@@ -176,7 +184,7 @@ class Board:
                         except ValueError:
                             user_input_ = 0
                     self.move_player_to_position(player, user_input_)
-                    os.system("cls")
+                    clear_screen()
                     print(f"P1 money: {player_1.money} | P2 money: {player_2.money}")
                     print(f"{current_player.name} rolled: {dice_roll}") if dice_roll else print()
                     print(f"Current player: {current_player.name}")

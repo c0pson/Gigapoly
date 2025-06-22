@@ -1,5 +1,6 @@
 from enum import IntEnum, StrEnum
 from typing import Union
+import os
 
 class COMPONENT_TILE(IntEnum):
     GPU = 2000
@@ -30,3 +31,6 @@ class NEUTRAL_EFFECT(StrEnum):
     NOTHING = "nothing"
 
 EFFECT = Union[GOOD_EFFECT, BAD_EFFECT, NEUTRAL_EFFECT]
+
+def clear_screen() -> None:
+    os.system('cls' if os.name == 'nt' else 'clear')

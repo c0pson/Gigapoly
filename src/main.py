@@ -1,7 +1,7 @@
 from player import Player
 from board import Board
 import random
-import os
+from misc import clear_screen
 from typing import Generator, Literal, Any, NoReturn
 
 class Game:
@@ -24,14 +24,14 @@ class Game:
         while self.running:
             current_player_index = next(self.current_turn)
             current_player = self.players[current_player_index]
-            os.system("cls")
+            clear_screen()
             print(f"P1 money: {self.player_1.money} | P2 money: {self.player_2.money}")
             print()
             print(f"Current player: {current_player.name}")
             self.board.display()
             input("Roll the dice")
             dice_roll = random.randint(1, 6)
-            os.system("cls")
+            clear_screen()
             current_player.move(dice_roll)
             print(f"P1 money: {self.player_1.money} | P2 money: {self.player_2.money}")
             print(f"{current_player.name} rolled: {dice_roll}")
@@ -39,7 +39,7 @@ class Game:
             self.board.display()
             self.board.buy_part(current_player, self.player_1, self.player_2, current_player, dice_roll)
             if self.player_1.check_end_game(self.player_2) or self.player_2.check_end_game(self.player_1):
-                os.system("cls")
+                clear_screen()
                 self.running = False
                 print(f"P1 money: {self.player_1.money} | P2 money: {self.player_2.money}")
                 print()
