@@ -1,3 +1,6 @@
+"""Enums and utility types for Gigapoly tiles and effects, plus a screen clearing function.
+"""
+
 from enum import IntEnum, StrEnum
 from typing import Union
 import os
@@ -32,5 +35,9 @@ class NEUTRAL_EFFECT(StrEnum):
 
 EFFECT = Union[GOOD_EFFECT, BAD_EFFECT, NEUTRAL_EFFECT]
 
-def clear_screen() -> None:
-    os.system('cls' if os.name == 'nt' else 'clear')
+if os.name == 'nt':
+    def clear_screen() -> None:
+        os.system('cls')
+else:
+    def clear_screen() -> None:
+        os.system('clear')

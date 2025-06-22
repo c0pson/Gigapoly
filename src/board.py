@@ -10,12 +10,16 @@ from misc import (
 from random import shuffle, randrange
 from typing import cast, TYPE_CHECKING
 from cards import RiskCards, ChanceCards
-import os
 
 if TYPE_CHECKING:
     from player import Player
 
 class Node:
+    """Represents a node in a circular graph structure for the game board.
+
+    Each Node contains a reference to a tile, an optional owner, a list of players currently on the node,
+    and links to the previous and next nodes, forming a circular doubly-linked list.
+    """
     def __init__(self, tile: TILE) -> None:
         self.tile = tile
         self.owner: 'Player' | None = None
@@ -24,6 +28,11 @@ class Node:
         self.next: Node | None = None
 
 class CircularGraph:
+    """Represents the circular graph structure for the game board.
+
+    The CircularGraph class manages a circular doubly-linked list of Node objects,
+    where each Node represents a tile on the board.
+    """
     def __init__(self) -> None:
         self.head: Node | None = None
 
@@ -41,12 +50,22 @@ class CircularGraph:
             self.head.prev = new_node
 
 class Board:
+    """Represents the circular graph structure for the game board.
+
+    The Board class manages all actions taken by players,
+    and creates visual representation of the current state of the board.
+    """
     def __init__(self) -> None:
         self.board: CircularGraph = self.create_board()
         self.chance_cards = ChanceCards()
         self.risk_cards = RiskCards()
 
     def create_board(self) -> CircularGraph:
+        """Creates randomly generated board.
+
+        Returns:
+            CircularGraph: Circular graph representing the board.
+        """
         tiles: list[TILE] = cast(list[TILE], list(SPECIAL_TILE) + list(COMPONENT_TILE) * 2)
         tiles.remove(SPECIAL_TILE.START)
         shuffle(tiles)
@@ -57,6 +76,12 @@ class Board:
         return cg
 
     def move_player(self, player: 'Player', steps: int) -> None:
+        """Moves player by specified amount of steps.
+
+        Args:
+            player (Player): Player to move.
+            steps (int): Amount of steps the player is taking.
+        """
         if not player.current_position:
             return
         if player in player.current_position.current_players:
@@ -71,6 +96,12 @@ class Board:
         player.current_position = new_position
 
     def move_player_to_position(self, player: 'Player', position_number: int) -> None:
+        """Moves player to specific position on board.
+
+        Args:
+            player (Player): Player to move.
+            position_number (int): Number on the tile to which player is being moved.
+        """
         if position_number < 1 or position_number > 16:
             return
         if player.current_position and player in player.current_position.current_players:
@@ -83,6 +114,12 @@ class Board:
         player.current_position = current
 
     def get_chance(self, player: 'Player', other_player: 'Player') -> None:
+        """Handles the effect of a Chance card for the player.
+
+        Args:
+            player (Player): Player drawing the Chance card.
+            other_player (Player): Other player in the game.
+        """
         effect = self.chance_cards.use_card()
         match effect:
             case GOOD_EFFECT.RAISE:
@@ -115,6 +152,12 @@ class Board:
                 pass
 
     def get_risk(self, player: 'Player', other_player: 'Player') -> None:
+        """Handles the effect of a Risk card for the player.
+
+        Args:
+            player (Player): Player drawing the Risk card.
+            other_player (Player): Other player in the game.
+        """
         effect = self.risk_cards.use_card()
         match effect:
             case GOOD_EFFECT.RAISE:
@@ -151,6 +194,12 @@ class Board:
                 pass
 
     def handle_buying(self, player: 'Player', other_player: 'Player') -> None:
+        """Handles the logic for a player buying a component tile or paying rent to another player.
+
+        Args:
+            player (Player): Player taking the action.
+            other_player (Player): Other player in the game.
+        """
         if player.current_position and player.current_position.owner:
                 if player.current_position.owner == player:
                     return
@@ -167,6 +216,15 @@ class Board:
                     player.add_owned_part(player.current_position.tile)
 
     def buy_part(self, player: 'Player', player_1, player_2, current_player, dice_roll) -> None:
+        """Handles the logic for a player attempting to buy a part or triggering special tile actions.
+
+        Args:
+            player (Player): Player taking the action.
+            player_1 (Player): First player in the game.
+            player_2 (Player): Second player in the game.
+            current_player (Player): Player whose turn it currently is.
+            dice_roll (int | None): The value of the dice roll, if applicable.
+        """
         if player.current_position and player.current_position.owner:
             self.handle_buying(player, player_1 if player_1 != current_player else player_2)
         self.handle_buying(player, player_2)
@@ -195,6 +253,11 @@ class Board:
 
     @staticmethod
     def draw_separator(row_idx: int) -> None:
+        """Prints a separator line for a board display based on the given row index.
+
+        Args:
+            row_idx (int): The index of the row for which the separator should be drawn.
+        """
         if row_idx == 0:
             print("┌────────" + "┬────────" * 4 + "┐")
         elif row_idx == 1:
@@ -210,32 +273,65 @@ class Board:
 
     @staticmethod
     def get_position_number(row_idx: int, col_idx: int) -> int:
-            border_pos_map = {
-                (0, 0): 1,  (0, 1): 2,
-                (0, 2): 3,  (0, 3): 4,
-                (0, 4): 5,  (1, 4): 6,
-                (2, 4): 7,  (3, 4): 8,
-                (4, 4): 9,  (4, 3): 10,
-                (4, 2): 11, (4, 1): 12,
-                (4, 0): 13, (3, 0): 14,
-                (2, 0): 15, (1, 0): 16
-            }
-            return border_pos_map.get((row_idx, col_idx), 0)
+        """Returns the board position number for a given row and column index.
+
+        Args:
+            row_idx (int): Row index on the board grid.
+            col_idx (int): Column index on the board grid.
+
+        Returns:
+            int: The position number on the board corresponding to the given indices.
+        """
+        border_pos_map = {
+            (0, 0): 1,  (0, 1): 2,
+            (0, 2): 3,  (0, 3): 4,
+            (0, 4): 5,  (1, 4): 6,
+            (2, 4): 7,  (3, 4): 8,
+            (4, 4): 9,  (4, 3): 10,
+            (4, 2): 11, (4, 1): 12,
+            (4, 0): 13, (3, 0): 14,
+            (2, 0): 15, (1, 0): 16
+        }
+        return border_pos_map.get((row_idx, col_idx), 0)
 
     @staticmethod
-    def get_owner_display(node) -> str:
+    def get_owner_display(node: Node) -> str:
+        """Returns a string representation of the owner of a given node.
+
+        Args:
+            node (Node): Object representing a node on the board.
+
+        Returns:
+            str: The name of the owner if the node and its owner exist, otherwise '--'.
+        """
         if not node or not node.owner:
             return "--"
         return node.owner.name
 
     @staticmethod
-    def get_players_display(node) -> str:
+    def get_players_display(node: Node) -> str:
+        """Returns a formatted string displaying the names of the current players at a given node,
+        with color coding based on player name (yellow for names containing "1", green otherwise).
+
+        Args:
+            node (Node): Object representing a node on the board.
+
+        Returns:
+            str: A formatted string of player names with ANSI color codes.
+        """
         if not node or not node.current_players:
             return ""
         player_names = [f"{"\033[33m" if "1" in player.name else "\033[32m"}{player.name}\033[0m" for player in node.current_players]
         return " ".join(player_names) + "  " * (int(2 / len(player_names))) + " " * (int(2 / len(player_names)))
 
     def draw_cell_lines(self, row: list[TILE], row_idx: int, temp_nodes: list[list[Node]]) -> None:
+        """Draws the content lines for each cell in a board row.
+
+        Args:
+            row (list[TILE]): The row of tiles to draw.
+            row_idx (int): The index of the row.
+            temp_nodes (list[list[Node]]): Temporary node data for the board.
+        """
         for line in range(4):
             if row_idx in {0, 4}:
                 out = ""
@@ -307,6 +403,8 @@ class Board:
                 print("│" + left_content + "│" + " " * 26 + "│" + right_content + "│")
 
     def display(self) -> None:
+        """Displays the current state of the board by mapping tiles and nodes to a 5x5 grid.
+        """
         temp_board: list[list[TILE]] = cast(list[list[TILE]], [[0 for _ in range(5)] for _ in range(5)])
         temp_nodes: list[list[Node]] = cast(list[list[Node]], [[None for _ in range(5)] for _ in range(5)])
         border_positions: list[tuple[int, int]] = [

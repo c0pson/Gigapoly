@@ -6,18 +6,40 @@ from typing import TypeVar, Generic
 T = TypeVar("T", bound=EFFECT)
 
 class Cards(ABC, Generic[T]):
+    """
+    Abstract base class representing a generic deck of cards.
+    Provides a template for creating, shuffling, and using cards from a deck.
+    """
     def __init__(self) -> None:
         self.deck: list[T] = self.create_deck()
 
     @abstractmethod
     def create_deck(self) -> list[T]:
+        """Abstract method for creating shuffled deck of cards.
+
+        Returns:
+            list[T]: Shuffled deck of cards.
+        """
         pass
 
     def shuffle_deck(self, deck: list[T]) -> list[T]:
+        """Shuffles the deck of cards.
+
+        Args:
+            deck (list[T]): Deck of cards
+
+        Returns:
+            list[T]: Shuffled deck of cards.
+        """
         shuffle(deck)
         return deck
 
     def use_card(self) -> T:
+        """Returns the card from the deck of cards if not empty. Creates a new one if empty and returns the card.
+
+        Returns:
+            T: Card.
+        """
         if not len(self.deck):
             self.deck = self.create_deck()
         return self.deck.pop()

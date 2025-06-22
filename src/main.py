@@ -5,6 +5,8 @@ from misc import clear_screen
 from typing import Generator, Literal, Any, NoReturn
 
 class Game:
+    """Main Game class for managing the game loop, players, and board.
+    """
     def __init__(self) -> None:
         self.running = True
         self.board = Board()
@@ -16,11 +18,18 @@ class Game:
         self.current_turn = self.turn()
 
     def turn(self) -> Generator[Literal[0, 1], Any, NoReturn]:
+        """Generator for alternating turns between two players.
+
+        Yields:
+            Literal[0, 1]: Index of the current player.
+        """
         while True:
             yield 0
             yield 1
 
     def mainloop(self) -> None:
+        """Main loop for running the game until an end condition is met.
+        """
         while self.running:
             current_player_index = next(self.current_turn)
             current_player = self.players[current_player_index]
