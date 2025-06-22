@@ -16,3 +16,17 @@ class SPECIAL_TILE(StrEnum):
     TRAVEL = "travel"
 
 TILE = Union[SPECIAL_TILE, COMPONENT_TILE]
+
+class GOOD_EFFECT(StrEnum):
+    RAISE = "raise"
+    MOVE = "move"
+    BONUS = "bonus"
+    ADVANCE = "advance"
+
+class BAD_EFFECT(StrEnum):
+    LOOSE = "loose"
+
+class NEUTRAL_EFFECT(StrEnum):
+    NOTHING = "nothing"
+
+EFFECT = Union[GOOD_EFFECT, BAD_EFFECT, NEUTRAL_EFFECT]
