@@ -16,3 +16,6 @@ class Player:
     
     def move_to(self, position: int) -> None:
         self.board.move_player_to_position(self, position)
+
+    def add_start_money(self) -> None:
+        self.money += 1000
