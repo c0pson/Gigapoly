@@ -25,7 +25,7 @@ python .\src\main.py
 
 ```bash
 source .venv/bin/activate
-python src/main
+python src/main.py
 ```
 
 ### How to play
