@@ -11,7 +11,8 @@ class Game:
         self.player_1 = Player(self.board, "P1")
         self.player_2 = Player(self.board, "P2")
         self.players = [self.player_1, self.player_2]
-        self.board.board.head.current_players = [self.player_1, self.player_2] # type: ignore
+        if self.board.board.head:
+            self.board.board.head.current_players = [self.player_1, self.player_2]
         self.current_turn = self.turn()
 
     def turn(self) -> Generator[Literal[0, 1], Any, NoReturn]:
